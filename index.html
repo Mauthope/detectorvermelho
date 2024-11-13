@@ -36,7 +36,7 @@
         #retangulo {
             position: absolute;
             border: 2px solid green;
-            width: 8vw; /* Ajuste responsivo */
+            width: 8vw;
             height: 8vw;
             top: 50%;
             left: 50%;
@@ -87,8 +87,8 @@
 
         // Função para detectar cor vermelha em um pequeno retângulo
         function detectarVermelho() {
-            const larguraRetangulo = video.videoWidth * 0.08; // 8% da largura do vídeo
-            const alturaRetangulo = video.videoHeight * 0.08; // 8% da altura do vídeo
+            const larguraRetangulo = video.videoWidth * 0.08;
+            const alturaRetangulo = video.videoHeight * 0.08;
 
             // Define o tamanho do canvas de acordo com o vídeo
             canvas.width = video.videoWidth;
@@ -104,7 +104,8 @@
             // Captura os dados da área do retângulo
             const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
 
-            let encontrouVermelho = false;
+            let pixelsVermelhos = 0;
+            const totalPixels = (larguraRetangulo * alturaRetangulo);
 
             // Verifica se há pixels vermelhos na área
             for (let i = 0; i < frame.length; i += 4) {
@@ -114,17 +115,19 @@
 
                 // Considera vermelho se 'r' for significativamente maior que 'g' e 'b'
                 if (r > 150 && g < 100 && b < 100) {
-                    encontrouVermelho = true;
-                    break;
+                    pixelsVermelhos++;
                 }
             }
 
-            // Contagem apenas se detectar vermelho pela primeira vez
-            if (encontrouVermelho && !detectouAnteriormente) {
+            // Calcula a porcentagem de pixels vermelhos
+            const porcentagemVermelho = (pixelsVermelhos / totalPixels) * 100;
+
+            // Contagem apenas se detectar vermelho em pelo menos 35% da área e não ter detectado anteriormente
+            if (porcentagemVermelho >= 35 && !detectouAnteriormente) {
                 contador++;
                 contadorEl.textContent = contador;
                 detectouAnteriormente = true;
-            } else if (!encontrouVermelho) {
+            } else if (porcentagemVermelho < 35) {
                 detectouAnteriormente = false;
             }
 
