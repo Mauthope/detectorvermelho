@@ -31,11 +31,10 @@
             border-radius: 10px;
         }
         canvas {
-            display: none;
-        }
-        #retangulo {
+            display: block;
             position: absolute;
-            border: 2px solid yellow;
+            top: 0;
+            left: 0;
         }
         p {
             font-size: 1.2em;
@@ -50,14 +49,12 @@
     <p>Contagem de vermelhos: <span id="contador">0</span></p>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
-    <div id="retangulo"></div>
 
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
-        const retangulo = document.getElementById('retangulo');
         let contador = 0;
         let detectouAnteriormente = false;
         let podeContar = true;
@@ -83,9 +80,9 @@
 
         // Função para detectar cor vermelha dentro da faixa horizontal com 1cm de altura
         function detectarVermelho() {
-            // A cada novo frame, a largura do vídeo é utilizada para calcular a posição do retângulo
-            const larguraRetangulo = video.videoWidth; // A largura do retângulo cobre toda a largura do vídeo
-            const alturaRetangulo = 37.8; // 1 cm em pixels (~37.8px)
+            // A cada novo frame, a largura do vídeo é utilizada para calcular a posição da borda
+            const larguraAreaDeteccao = video.videoWidth; // A largura da área de detecção cobre toda a largura do vídeo
+            const alturaAreaDeteccao = 37.8; // 1 cm em pixels (~37.8px)
 
             // Atualiza o tamanho do canvas para o tamanho do vídeo
             canvas.width = video.videoWidth;
@@ -94,18 +91,17 @@
             // Desenha o vídeo no canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Coordenadas do retângulo para cobrir toda a largura do vídeo com 1cm de altura
+            // Coordenadas da área de detecção para cobrir toda a largura do vídeo com 1cm de altura
             const x = 0; // A posição X começa no início da largura do vídeo
-            const y = (canvas.height / 2) - (alturaRetangulo / 2); // Coloca o retângulo no meio da altura do vídeo
+            const y = (canvas.height / 2) - (alturaAreaDeteccao / 2); // Coloca a área no meio da altura do vídeo
 
-            // Atualiza a posição do retângulo no DOM
-            retangulo.style.width = `${larguraRetangulo}px`;
-            retangulo.style.height = `${alturaRetangulo}px`;
-            retangulo.style.left = `${x}px`;
-            retangulo.style.top = `${y}px`;
+            // Desenha a borda amarela ao redor da área de detecção
+            ctx.strokeStyle = 'yellow'; // Cor da borda
+            ctx.lineWidth = 2; // Largura da borda
+            ctx.strokeRect(x, y, larguraAreaDeteccao, alturaAreaDeteccao); // Desenha a borda
 
-            // Captura os dados da área do retângulo do canvas
-            const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
+            // Captura os dados da área de detecção no canvas
+            const frame = ctx.getImageData(x, y, larguraAreaDeteccao, alturaAreaDeteccao).data;
 
             let encontrouVermelho = false;
 
