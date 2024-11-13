@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detecção de Cor Vermelha</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+  <style>
+    body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f5f5f5;
+}
+
+video {
+    display: none;
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#retangulo {
+    position: absolute;
+    border: 3px solid green;
+    width: 150px;
+    height: 150px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+p {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+  </style>
+<body>
+    <h1>Detecção de Cor Vermelha</h1>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="retangulo"></div>
+    <p>Contagem de vermelhos: <span id="contador">0</span></p>
+    <script src="script.js"></script>
+  <script>
+
+    const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const contadorEl = document.getElementById('contador');
+let contador = 0;
+
+// Função para acessar a câmera
+async function acessarCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.play();
+    } catch (err) {
+        console.error("Erro ao acessar a câmera: ", err);
+    }
+}
+
+// Função para verificar se a cor vermelha está presente no retângulo
+function detectarVermelho() {
+    const larguraRetangulo = 150;
+    const alturaRetangulo = 150;
+
+    // Define o canvas para ter o mesmo tamanho do vídeo
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    // Desenha o quadro atual da câmera no canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Obtém a área do retângulo no meio do canvas
+    const x = (canvas.width / 2) - (larguraRetangulo / 2);
+    const y = (canvas.height / 2) - (alturaRetangulo / 2);
+    const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
+
+    // Verifica se há pixels vermelhos na área
+    let encontrouVermelho = false;
+    for (let i = 0; i < frame.length; i += 4) {
+        const r = frame[i];
+        const g = frame[i + 1];
+        const b = frame[i + 2];
+
+        // Se o valor de 'r' for significativamente maior que 'g' e 'b', consideramos como vermelho
+        if (r > 150 && g < 100 && b < 100) {
+            encontrouVermelho = true;
+            break;
+        }
+    }
+
+    // Incrementa o contador se vermelho for detectado
+    if (encontrouVermelho) {
+        contador++;
+        contadorEl.textContent = contador;
+    }
+
+    // Chama novamente a função para continuar verificando
+    requestAnimationFrame(detectarVermelho);
+}
+
+// Inicia o acesso à câmera e a detecção de cor
+acessarCamera().then(() => {
+    video.addEventListener('playing', detectarVermelho);
+});
+
+  </script>
+</body>
+</html>
