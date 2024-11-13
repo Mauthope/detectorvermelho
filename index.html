@@ -36,8 +36,8 @@
         #retangulo {
             position: absolute;
             border: 3px solid yellow;
-            width: 76px;
-            height: 76px;
+            width: 38px;
+            height: 38px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -52,6 +52,7 @@
 </head>
 <body>
     <h1>Detecção de Cor Vermelha</h1>
+    <p>Contagem de vermelhos: <span id="contador">0</span></p>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div id="retangulo"></div>
@@ -71,7 +72,7 @@
             try {
                 const constraints = {
                     video: {
-                        facingMode: { exact: "environment" } // Prioriza a câmera traseira
+                        facingMode: { exact: "environment" }
                     }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -88,8 +89,8 @@
 
         // Função para detectar cor vermelha
         function detectarVermelho() {
-            const larguraRetangulo = 76;
-            const alturaRetangulo = 76;
+            const larguraRetangulo = 38;
+            const alturaRetangulo = 38;
 
             // Define o tamanho do canvas de acordo com o vídeo
             canvas.width = video.videoWidth;
@@ -112,12 +113,18 @@
             let pixelsVermelhosSuperior = 0;
             let pixelsVermelhosInferior = 0;
 
+            // Função para detectar tons de vermelho (vários tons)
+            function isVermelho(r, g, b) {
+                const intensidadeMin = 120;
+                return r > intensidadeMin && g < r * 0.6 && b < r * 0.6;
+            }
+
             // Verificar a parte superior (top 1/3)
             for (let i = 0; i < totalPixelsSegmento * 4; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
-                if (r > 150 && g < 100 && b < 100) {
+                if (isVermelho(r, g, b)) {
                     pixelsVermelhosSuperior++;
                 }
             }
@@ -128,7 +135,7 @@
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
-                if (r > 150 && g < 100 && b < 100) {
+                if (isVermelho(r, g, b)) {
                     pixelsVermelhosInferior++;
                 }
             }
@@ -138,17 +145,17 @@
             const percVermelhoInferior = (pixelsVermelhosInferior / totalPixelsSegmento) * 100;
 
             // Verifica se há vermelho considerável na parte superior e inferior
-            if (percVermelhoSuperior > 30) {
+            if (percVermelhoSuperior > 10) {
                 detectouSuperior = true;
             }
-            if (detectouSuperior && percVermelhoInferior > 30 && !detectouInferior) {
+            if (detectouSuperior && percVermelhoInferior > 10 && !detectouInferior) {
                 contador++;
                 contadorEl.textContent = contador;
                 detectouInferior = true;
             }
 
             // Resetar a detecção
-            if (percVermelhoSuperior < 30 && percVermelhoInferior < 30) {
+            if (percVermelhoSuperior < 10 && percVermelhoInferior < 10) {
                 detectouSuperior = false;
                 detectouInferior = false;
             }
