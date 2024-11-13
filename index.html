@@ -35,9 +35,9 @@
         }
         #retangulo {
             position: absolute;
-            border: 3px solid yellow; /* Cor alterada para amarelo */
-            width: 37.8px; /* 1 cm */
-            height: 37.8px; /* 1 cm */
+            border: 2px solid yellow;
+            width: 8vw; /* Ajuste responsivo */
+            height: 8vw;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -65,7 +65,6 @@
         const contadorEl = document.getElementById('contador');
         let contador = 0;
         let detectouAnteriormente = false;
-        let semVermelho = true;
 
         // Função para acessar a câmera traseira
         async function acessarCamera() {
@@ -87,10 +86,10 @@
             }
         }
 
-        // Função para detectar cor vermelha exclusivamente dentro do retângulo
+        // Função para detectar cor vermelha em um pequeno retângulo
         function detectarVermelho() {
-            const larguraRetangulo = 37.8; // 1 cm
-            const alturaRetangulo = 37.8; // 1 cm
+            const larguraRetangulo = video.videoWidth * 0.08; // 8% da largura do vídeo
+            const alturaRetangulo = video.videoHeight * 0.08; // 8% da altura do vídeo
 
             // Define o tamanho do canvas de acordo com o vídeo
             canvas.width = video.videoWidth;
@@ -108,7 +107,7 @@
 
             let encontrouVermelho = false;
 
-            // Verifica se há pixels vermelhos na área do retângulo
+            // Verifica se há pixels vermelhos na área
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
@@ -121,14 +120,13 @@
                 }
             }
 
-            // Lógica para evitar contagens duplicadas
-            if (encontrouVermelho && semVermelho) {
+            // Contagem apenas se detectar vermelho pela primeira vez
+            if (encontrouVermelho && !detectouAnteriormente) {
                 contador++;
                 contadorEl.textContent = contador;
                 detectouAnteriormente = true;
-                semVermelho = false;
             } else if (!encontrouVermelho) {
-                semVermelho = true;
+                detectouAnteriormente = false;
             }
 
             // Continuar detectando em tempo real
