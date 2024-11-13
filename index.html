@@ -81,6 +81,24 @@
             }
         }
 
+        // Função para desenhar bolinhas laranjas nas extremidades da área de detecção
+        function desenharBolinhas(x, y, larguraDetecao) {
+            const raio = 8; // Tamanho da bolinha
+            const cor = "orange"; // Cor da bolinha
+
+            // Bolinha no início da área de detecção (lado esquerdo)
+            ctx.beginPath();
+            ctx.arc(x, y + 15, raio, 0, 2 * Math.PI); // 15px abaixo do topo da área
+            ctx.fillStyle = cor;
+            ctx.fill();
+
+            // Bolinha no final da área de detecção (lado direito)
+            ctx.beginPath();
+            ctx.arc(x + larguraDetecao, y + 15, raio, 0, 2 * Math.PI); // 15px abaixo do topo da área
+            ctx.fillStyle = cor;
+            ctx.fill();
+        }
+
         // Função para detectar cor vermelha dentro da faixa horizontal com 1cm de altura
         function detectarVermelho() {
             // A cada novo frame, a largura do vídeo é utilizada para calcular a posição da área de detecção
@@ -136,6 +154,9 @@
             } else if (!encontrouVermelho) {
                 detectouAnteriormente = false;
             }
+
+            // Desenha as bolinhas nas extremidades da área de detecção
+            desenharBolinhas(x, y, larguraDetecao);
 
             // Solicita o próximo frame para detecção contínua
             requestAnimationFrame(detectarVermelho);
