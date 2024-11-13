@@ -19,7 +19,6 @@
             background-color: #f5f5f5;
             font-family: Arial, sans-serif;
             overflow: hidden;
-            padding: 20px; /* Adiciona um pouco de espaço para evitar que o vídeo cubra os outros elementos */
         }
         h1 {
             font-size: 1.5em;
@@ -27,17 +26,16 @@
         }
         #video {
             display: block;
-            width: 7cm; /* Define a largura do vídeo em 7cm */
-            height: 7cm; /* Define a altura do vídeo em 7cm */
-            object-fit: cover; /* Ajusta o conteúdo do vídeo para preencher a área */
+            max-width: 100%;
+            height: auto;
             border-radius: 10px;
-            margin-top: 20px; /* Garante que o vídeo não fique colado no título */
         }
         canvas {
-            display: block;
+            display: none;
+        }
+        .detectar-area {
             position: absolute;
-            top: 0;
-            left: 0;
+            border: 2px solid yellow; /* Borda amarela na área de detecção */
         }
         p {
             font-size: 1.2em;
@@ -51,6 +49,7 @@
     <h1>Detecção de Cor Vermelha</h1>
     <p>Contagem de vermelhos: <span id="contador">0</span></p>
     <video id="video" autoplay playsinline></video>
+    <div id="detectar-area" class="detectar-area"></div>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -58,6 +57,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
+        const detectarArea = document.getElementById('detectar-area');
         let contador = 0;
         let detectouAnteriormente = false;
         let podeContar = true;
@@ -83,9 +83,9 @@
 
         // Função para detectar cor vermelha dentro da faixa horizontal com 1cm de altura
         function detectarVermelho() {
-            // A cada novo frame, a largura do vídeo é utilizada para calcular a posição da borda
-            const larguraAreaDeteccao = video.videoWidth; // A largura da área de detecção cobre toda a largura do vídeo
-            const alturaAreaDeteccao = 37.8; // 1 cm em pixels (~37.8px)
+            // A cada novo frame, a largura do vídeo é utilizada para calcular a posição da área de detecção
+            const larguraDetecao = video.videoWidth; // A largura da área de detecção cobre toda a largura do vídeo
+            const alturaDetecao = 37.8; // 1 cm em pixels (~37.8px)
 
             // Atualiza o tamanho do canvas para o tamanho do vídeo
             canvas.width = video.videoWidth;
@@ -96,15 +96,16 @@
 
             // Coordenadas da área de detecção para cobrir toda a largura do vídeo com 1cm de altura
             const x = 0; // A posição X começa no início da largura do vídeo
-            const y = (canvas.height / 2) - (alturaAreaDeteccao / 2); // Coloca a área no meio da altura do vídeo
+            const y = (canvas.height / 2) - (alturaDetecao / 2); // Coloca a área de detecção no meio da altura do vídeo
 
-            // Desenha a borda amarela ao redor da área de detecção
-            ctx.strokeStyle = 'yellow'; // Cor da borda
-            ctx.lineWidth = 2; // Largura da borda
-            ctx.strokeRect(x, y, larguraAreaDeteccao, alturaAreaDeteccao); // Desenha a borda
+            // Atualiza o estilo da área de detecção no DOM
+            detectarArea.style.width = `${larguraDetecao}px`;
+            detectarArea.style.height = `${alturaDetecao}px`;
+            detectarArea.style.left = `${x}px`;
+            detectarArea.style.top = `${y}px`;
 
-            // Captura os dados da área de detecção no canvas
-            const frame = ctx.getImageData(x, y, larguraAreaDeteccao, alturaAreaDeteccao).data;
+            // Captura os dados da área do canvas correspondente à área de detecção
+            const frame = ctx.getImageData(x, y, larguraDetecao, alturaDetecao).data;
 
             let encontrouVermelho = false;
 
