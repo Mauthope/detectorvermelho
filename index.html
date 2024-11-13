@@ -36,7 +36,7 @@
         #retangulo {
             position: absolute;
             border: 2px solid yellow;
-            width: 8vw; /* Ajuste responsivo */
+            width: 8vw;
             height: 8vw;
             top: 50%;
             left: 50%;
@@ -56,7 +56,6 @@
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
     <div id="retangulo"></div>
-    
 
     <script>
         const video = document.getElementById('video');
@@ -65,13 +64,14 @@
         const contadorEl = document.getElementById('contador');
         let contador = 0;
         let detectouAnteriormente = false;
+        let podeContar = true;
 
         // Função para acessar a câmera traseira
         async function acessarCamera() {
             try {
                 const constraints = {
                     video: {
-                        facingMode: { exact: "environment" } // Prioriza a câmera traseira
+                        facingMode: { exact: "environment" }
                     }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -79,7 +79,6 @@
                 video.play();
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
-                alert("Não foi possível acessar a câmera traseira. Usando câmera padrão.");
                 const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = fallbackStream;
                 video.play();
@@ -88,52 +87,50 @@
 
         // Função para detectar cor vermelha em um pequeno retângulo
         function detectarVermelho() {
-            const larguraRetangulo = video.videoWidth * 0.08; // 8% da largura do vídeo
-            const alturaRetangulo = video.videoHeight * 0.08; // 8% da altura do vídeo
+            const larguraRetangulo = video.videoWidth * 0.08;
+            const alturaRetangulo = video.videoHeight * 0.08;
 
-            // Define o tamanho do canvas de acordo com o vídeo
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // Desenha o quadro atual da câmera no canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Coordenadas para o retângulo central
             const x = (canvas.width / 2) - (larguraRetangulo / 2);
             const y = (canvas.height / 2) - (alturaRetangulo / 2);
 
-            // Captura os dados da área do retângulo
             const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
 
             let encontrouVermelho = false;
 
-            // Verifica se há pixels vermelhos na área
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
 
-                // Considera vermelho se 'r' for significativamente maior que 'g' e 'b'
                 if (r > 150 && g < 100 && b < 100) {
                     encontrouVermelho = true;
                     break;
                 }
             }
 
-            // Contagem apenas se detectar vermelho pela primeira vez
-            if (encontrouVermelho && !detectouAnteriormente) {
+            // Lógica para contar apenas uma vez quando o objeto vermelho entrar no quadrado
+            if (encontrouVermelho && !detectouAnteriormente && podeContar) {
                 contador++;
                 contadorEl.textContent = contador;
                 detectouAnteriormente = true;
+                podeContar = false; // Desabilita a contagem temporariamente
+
+                // Aguarda 1 segundo antes de permitir nova contagem
+                setTimeout(() => {
+                    podeContar = true;
+                }, 1000);
             } else if (!encontrouVermelho) {
                 detectouAnteriormente = false;
             }
 
-            // Continuar detectando em tempo real
             requestAnimationFrame(detectarVermelho);
         }
 
-        // Inicia a câmera e a detecção
         acessarCamera().then(() => {
             video.addEventListener('playing', detectarVermelho);
         });
