@@ -38,9 +38,6 @@
             border: 2px solid yellow;
             width: 8vw; /* Ajuste responsivo */
             height: 8vw; /* Ajuste responsivo */
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
         }
         p {
             font-size: 1.2em;
@@ -106,8 +103,8 @@
             // Atualiza a posição do retângulo no DOM
             retangulo.style.width = `${larguraRetangulo}px`;
             retangulo.style.height = `${alturaRetangulo}px`;
-            retangulo.style.left = `${(canvas.width / 2) - (larguraRetangulo / 2)}px`;
-            retangulo.style.top = `${(canvas.height / 2) - (alturaRetangulo / 2)}px`;
+            retangulo.style.left = `${x}px`;
+            retangulo.style.top = `${y}px`;
 
             // Captura os dados da área do retângulo do canvas
             const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
