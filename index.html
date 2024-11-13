@@ -31,9 +31,7 @@
             border-radius: 10px;
         }
         canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
+            display: none;
         }
         #retangulo {
             position: absolute;
@@ -64,7 +62,6 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
-        const retangulo = document.getElementById('retangulo');
         let contador = 0;
         let detectouAnteriormente = false;
         let podeContar = true;
@@ -73,7 +70,9 @@
         async function acessarCamera() {
             try {
                 const constraints = {
-                    video: { facingMode: { exact: "environment" } }
+                    video: {
+                        facingMode: { exact: "environment" }
+                    }
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
@@ -86,38 +85,34 @@
             }
         }
 
-        // Função para detectar cor vermelha dentro do retângulo visível
+        // Função para detectar cor vermelha em um pequeno retângulo
         function detectarVermelho() {
-            const rect = retangulo.getBoundingClientRect();
+            const larguraRetangulo = video.videoWidth * 0.08;
+            const alturaRetangulo = video.videoHeight * 0.08;
 
-            // Define o tamanho do canvas e o posiciona exatamente sobre o vídeo
+            // Define o tamanho do canvas de acordo com o vídeo
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.style.width = `${video.videoWidth}px`;
-            canvas.style.height = `${video.videoHeight}px`;
-
-            // Ajusta as coordenadas do retângulo em relação ao canvas
-            const escalaX = video.videoWidth / window.innerWidth;
-            const escalaY = video.videoHeight / window.innerHeight;
-
-            const x = rect.left * escalaX;
-            const y = rect.top * escalaY;
-            const larguraRetangulo = rect.width * escalaX;
-            const alturaRetangulo = rect.height * escalaY;
 
             // Desenha o quadro atual da câmera no canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Captura os dados da área do retângulo
+            // Coordenadas do retângulo na tela, ajustadas para o vídeo
+            const x = (canvas.width / 2) - (larguraRetangulo / 2);
+            const y = (canvas.height / 2) - (alturaRetangulo / 2);
+
+            // Captura os dados da área do retângulo no canvas
             const frame = ctx.getImageData(x, y, larguraRetangulo, alturaRetangulo).data;
 
             let encontrouVermelho = false;
 
+            // Verifica se há pixels vermelhos na área
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
 
+                // Considera vermelho se 'r' for significativamente maior que 'g' e 'b'
                 if (r > 150 && g < 100 && b < 100) {
                     encontrouVermelho = true;
                     break;
@@ -129,7 +124,7 @@
                 contador++;
                 contadorEl.textContent = contador;
                 detectouAnteriormente = true;
-                podeContar = false;
+                podeContar = false; // Desabilita a contagem temporariamente
 
                 // Aguarda 1 segundo antes de permitir nova contagem
                 setTimeout(() => {
