@@ -35,7 +35,7 @@
         }
         #retangulo {
             position: absolute;
-            border: 3px solid yellow; /* Alterado para amarelo */
+            border: 3px solid yellow; /* Cor alterada para amarelo */
             width: 37.8px; /* 1 cm */
             height: 37.8px; /* 1 cm */
             top: 50%;
@@ -64,7 +64,7 @@
         const contadorEl = document.getElementById('contador');
         let contador = 0;
         let detectouAnteriormente = false;
-        let semVermelho = true; // Verifica se o retângulo está 100% livre de vermelho
+        let semVermelho = true;
 
         // Função para acessar a câmera traseira
         async function acessarCamera() {
@@ -86,7 +86,7 @@
             }
         }
 
-        // Função para detectar cor vermelha em um pequeno retângulo
+        // Função para detectar cor vermelha exclusivamente dentro do retângulo
         function detectarVermelho() {
             const larguraRetangulo = 37.8; // 1 cm
             const alturaRetangulo = 37.8; // 1 cm
@@ -107,7 +107,7 @@
 
             let encontrouVermelho = false;
 
-            // Verifica se há pixels vermelhos na área
+            // Verifica se há pixels vermelhos na área do retângulo
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
