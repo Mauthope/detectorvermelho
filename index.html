@@ -33,6 +33,10 @@
         canvas {
             display: none;
         }
+        .detectar-area {
+            position: absolute;
+            border: 2px solid yellow;
+        }
         p {
             font-size: 1.2em;
             font-weight: bold;
@@ -52,14 +56,11 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
-        let contador = 0;
-        let detectouAnteriormente = false;
-        let podeContar = true;
 
-        // Variáveis para controlar as detecções nas três áreas
-        let detectouPrimeira = false;
-        let detectouMeio = false;
-        let detectouTerceira = false;
+        let contador = 0;
+        let detectouSuperior = false;
+        let detectouCentral = false;
+        let podeContar = true;
 
         // Função para acessar a câmera traseira
         async function acessarCamera() {
@@ -80,64 +81,64 @@
             }
         }
 
-        // Função para detectar cor vermelha nas três faixas horizontais
+        // Função para detectar cor vermelha nas duas áreas (superior e central)
         function detectarVermelho() {
-            const larguraDetecao = video.videoWidth;
-            const alturaDetecao = video.videoHeight / 6; // Altura de cada faixa (1/6 da altura do vídeo)
-
             // Atualiza o tamanho do canvas para o tamanho do vídeo
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // Desenha o vídeo no canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Função auxiliar para detectar vermelho em uma faixa
-            function verificarVermelho(y) {
-                const frame = ctx.getImageData(0, y, larguraDetecao, alturaDetecao).data;
+            const alturaDetecao = 37.8; // 1 cm em pixels (~37.8px)
+            const larguraDetecao = video.videoWidth;
+
+            // Coordenadas da área superior
+            const ySuperior = canvas.height * 0.2; // 20% da altura do vídeo
+            const frameSuperior = ctx.getImageData(0, ySuperior, larguraDetecao, alturaDetecao).data;
+
+            // Coordenadas da área central
+            const yCentral = (canvas.height / 2) - (alturaDetecao / 2);
+            const frameCentral = ctx.getImageData(0, yCentral, larguraDetecao, alturaDetecao).data;
+
+            // Função para verificar a presença de vermelho em uma área
+            function encontrouVermelho(frame) {
                 for (let i = 0; i < frame.length; i += 4) {
                     const r = frame[i];
                     const g = frame[i + 1];
                     const b = frame[i + 2];
-                    if (r > 150 && g < 100 && b < 100) {
-                        return true;
-                    }
+                    if (r > 150 && g < 100 && b < 100) return true;
                 }
                 return false;
             }
 
-            // Verifica as três áreas horizontais
-            const encontrouPrimeira = verificarVermelho(0); // Parte superior
-            const encontrouMeio = verificarVermelho(canvas.height / 2 - alturaDetecao / 2); // Meio
-            const encontrouTerceira = verificarVermelho(canvas.height - alturaDetecao); // Parte inferior
+            const vermelhoSuperior = encontrouVermelho(frameSuperior);
+            const vermelhoCentral = encontrouVermelho(frameCentral);
 
             // Lógica de contagem
-            if (encontrouPrimeira) {
-                detectouPrimeira = true;
+            if (vermelhoSuperior && !detectouSuperior && podeContar) {
+                detectouSuperior = true;
             }
-            if (encontrouMeio && detectouPrimeira && podeContar) {
+
+            if (vermelhoCentral && detectouSuperior && !detectouCentral && podeContar) {
+                detectouCentral = true;
                 contador++;
                 contadorEl.textContent = contador;
                 podeContar = false;
+
+                // Reseta o estado após 1 segundo
                 setTimeout(() => {
+                    detectouSuperior = false;
+                    detectouCentral = false;
                     podeContar = true;
                 }, 1000);
             }
 
-            if (encontrouTerceira) {
-                detectouTerceira = true;
+            // Se detectar na central antes da superior, reseta sem contar
+            if (vermelhoCentral && !detectouSuperior) {
+                detectouSuperior = false;
+                detectouCentral = false;
             }
 
-            // Reseta detecções após a contagem ou se detectou na parte inferior
-            if (detectouTerceira && encontrouMeio) {
-                detectouPrimeira = false;
-                detectouTerceira = false;
-            } else if (!encontrouPrimeira && !encontrouMeio && !encontrouTerceira) {
-                detectouPrimeira = false;
-                detectouTerceira = false;
-            }
-
-            // Solicita o próximo frame
             requestAnimationFrame(detectarVermelho);
         }
 
