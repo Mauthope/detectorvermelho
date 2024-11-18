@@ -50,7 +50,6 @@
     <h1>Detecção de Cor Vermelha</h1>
     <h1>Contagem de Peças: <span id="contador">0</span></h1>
     <video id="video" autoplay playsinline></video>
-    <div id="detectar-area" class="detectar-area"></div>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -58,11 +57,12 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
-        const detectarArea = document.getElementById('detectar-area');
         let contador = 0;
-        let detectouAnteriormente = false;
-        let podeContar = true;
-        let posicaoYAnterior = null;
+
+        // Estados para monitorar as regiões
+        let detectouSuperior = false;
+        let detectouCentral = false;
+        let detectouInferior = false;
 
         // Função para acessar a câmera traseira
         async function acessarCamera() {
@@ -81,63 +81,66 @@
             }
         }
 
-        // Função para detectar cor vermelha dentro da faixa horizontal
+        // Função para detectar cor vermelha nas três áreas
         function detectarVermelho() {
             const larguraDetecao = video.videoWidth;
-            const alturaDetecao = 37.8;
+            const alturaDetecao = video.videoHeight;
 
-            // Ajusta o tamanho do canvas
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // Ajusta o tamanho do canvas para corresponder ao vídeo
+            canvas.width = larguraDetecao;
+            canvas.height = alturaDetecao;
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Coordenadas da área de detecção no centro da tela
-            const x = 0;
-            const y = (canvas.height / 2) - (alturaDetecao / 2);
+            // Divide a tela em três partes
+            const alturaParte = canvas.height / 3;
 
-            detectarArea.style.width = `${larguraDetecao}px`;
-            detectarArea.style.height = `${alturaDetecao}px`;
-            detectarArea.style.left = `${x}px`;
-            detectarArea.style.top = `${y}px`;
+            // Coordenadas das áreas
+            const areaSuperior = ctx.getImageData(0, 0, larguraDetecao, alturaParte).data;
+            const areaCentral = ctx.getImageData(0, alturaParte, larguraDetecao, alturaParte).data;
+            const areaInferior = ctx.getImageData(0, 2 * alturaParte, larguraDetecao, alturaParte).data;
 
-            const frame = ctx.getImageData(x, y, larguraDetecao, alturaDetecao).data;
-
-            let encontrouVermelho = false;
-            let posicaoY = null;
-
-            // Verifica pixels vermelhos
-            for (let i = 0; i < frame.length; i += 4) {
-                const r = frame[i];
-                const g = frame[i + 1];
-                const b = frame[i + 2];
-
-                if (r > 150 && g < 100 && b < 100) {
-                    encontrouVermelho = true;
-                    posicaoY = Math.floor(i / 4 / larguraDetecao); // Posição Y do objeto detectado
-                    break;
+            // Função para verificar se há vermelho em uma área
+            function encontrouVermelho(frame) {
+                for (let i = 0; i < frame.length; i += 4) {
+                    const r = frame[i];
+                    const g = frame[i + 1];
+                    const b = frame[i + 2];
+                    if (r > 150 && g < 100 && b < 100) {
+                        return true;
+                    }
                 }
+                return false;
             }
 
-            // Lógica para detecção de movimento de cima para baixo
-            if (encontrouVermelho && posicaoY !== null) {
-                if (posicaoYAnterior !== null && posicaoY > posicaoYAnterior && podeContar) {
-                    contador++;
-                    contadorEl.textContent = contador;
-                    podeContar = false;
+            const vermelhoSuperior = encontrouVermelho(areaSuperior);
+            const vermelhoCentral = encontrouVermelho(areaCentral);
+            const vermelhoInferior = encontrouVermelho(areaInferior);
 
-                    // Aguarda 1 segundo antes de permitir nova contagem
-                    setTimeout(() => {
-                        podeContar = true;
-                    }, 1000);
-                }
-                posicaoYAnterior = posicaoY;
-                detectouAnteriormente = true;
-            } else {
-                detectouAnteriormente = false;
-                posicaoYAnterior = null;
+            // Lógica de detecção baseada nas três áreas
+            if (vermelhoSuperior) {
+                detectouSuperior = true;
             }
 
+            if (vermelhoCentral && detectouSuperior && !detectouInferior) {
+                // Conta somente se o objeto foi detectado primeiro na parte superior
+                contador++;
+                contadorEl.textContent = contador;
+                resetarDeteccao();
+            }
+
+            if (vermelhoInferior) {
+                detectouInferior = true;
+            }
+
+            // Reseta a detecção para evitar contagens duplicadas
+            function resetarDeteccao() {
+                detectouSuperior = false;
+                detectouCentral = false;
+                detectouInferior = false;
+            }
+
+            // Solicita o próximo frame para detecção contínua
             requestAnimationFrame(detectarVermelho);
         }
 
