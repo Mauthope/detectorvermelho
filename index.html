@@ -19,6 +19,7 @@
             background-color: #f5f5f5;
             font-family: Arial, sans-serif;
             overflow: hidden;
+            position: relative;
         }
         h1 {
             font-size: 1.5em;
@@ -33,10 +34,10 @@
         canvas {
             display: none;
         }
-        .detectar-area {
-            max-width: 100%;
+        #detectar-area {
             position: absolute;
-            border: 2px solid yellow; /* Borda branca na área de detecção */
+            border: 2px solid yellow;
+            pointer-events: none; /* Impede interação com o quadrado */
         }
         p {
             font-size: 1.2em;
@@ -47,10 +48,9 @@
     </style>
 </head>
 <body>
-    <h1>Detecção de Cor Vermelha</h1>
-    <h1>Contagem de Peças: <span id="contador">0</span></h1>
+    <h1>Contagem de Passagens: <span id="contador">0</span></h1>
     <video id="video" autoplay playsinline></video>
-    <div id="detectar-area" class="detectar-area"></div>
+    <div id="detectar-area"></div>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -62,87 +62,76 @@
         let contador = 0;
         let detectouAnteriormente = false;
         let podeContar = true;
+        let movimentoAnterior = null; // Para detectar movimento descendente
 
-        // Função para acessar a câmera traseira
+        // Configuração da área de detecção
+        const TAMANHO_QUADRADO = 18.9; // 0,5 cm em pixels
+
+        // Acessa a câmera
         async function acessarCamera() {
             try {
-                const constraints = {
-                    video: {
-                        facingMode: { exact: "environment" } // Prioriza a câmera traseira
-                    }
-                };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: "environment" } }
+                });
                 video.srcObject = stream;
                 video.play();
             } catch (err) {
                 console.error("Erro ao acessar a câmera:", err);
-                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = fallbackStream;
-                video.play();
             }
         }
 
-        // Função para detectar cor vermelha dentro da faixa horizontal com 1cm de altura
         function detectarVermelho() {
-            // A cada novo frame, a largura do vídeo é utilizada para calcular a posição da área de detecção
-            const larguraDetecao = video.videoWidth; // A largura da área de detecção cobre toda a largura do vídeo
-            const alturaDetecao = 37.8; // 1 cm em pixels (~37.8px)
-
-            // Atualiza o tamanho do canvas para o tamanho do vídeo
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // Desenha o vídeo no canvas
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const meioX = canvas.width / 2;
+            const meioY = canvas.height / 2;
 
-            // Coordenadas da área de detecção para cobrir toda a largura do vídeo com 1cm de altura
-            const x = 0; // A posição X começa no início da largura do vídeo
-            const y = (canvas.height / 2) - (alturaDetecao / 2); // Coloca a área de detecção no meio da altura do vídeo
+            const x = meioX - TAMANHO_QUADRADO / 2;
+            const y = meioY - TAMANHO_QUADRADO / 2;
 
-            // Atualiza o estilo da área de detecção no DOM
-            detectarArea.style.width = `${larguraDetecao}px`;
-            detectarArea.style.height = `${alturaDetecao}px`;
+            detectarArea.style.width = `${TAMANHO_QUADRADO}px`;
+            detectarArea.style.height = `${TAMANHO_QUADRADO}px`;
             detectarArea.style.left = `${x}px`;
             detectarArea.style.top = `${y}px`;
 
-            // Captura os dados da área do canvas correspondente à área de detecção
-            const frame = ctx.getImageData(x, y, larguraDetecao, alturaDetecao).data;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const frame = ctx.getImageData(x, y, TAMANHO_QUADRADO, TAMANHO_QUADRADO).data;
 
             let encontrouVermelho = false;
 
-            // Verifica se há pixels vermelhos na área
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
 
-                // Considera vermelho se 'r' for significativamente maior que 'g' e 'b'
                 if (r > 150 && g < 100 && b < 100) {
                     encontrouVermelho = true;
                     break;
                 }
             }
 
-            // Lógica para contar apenas uma vez quando o objeto vermelho entra na faixa
-            if (encontrouVermelho && !detectouAnteriormente && podeContar) {
-                contador++;
-                contadorEl.textContent = contador;
-                detectouAnteriormente = true;
-                podeContar = false; // Desabilita a contagem temporariamente
+            const centroAtual = y + TAMANHO_QUADRADO / 2;
 
-                // Aguarda 1 segundo antes de permitir nova contagem
-                setTimeout(() => {
-                    podeContar = true;
-                }, 1000);
-            } else if (!encontrouVermelho) {
+            if (encontrouVermelho) {
+                if (!detectouAnteriormente && podeContar && movimentoAnterior !== null && centroAtual > movimentoAnterior) {
+                    contador++;
+                    contadorEl.textContent = contador;
+                    detectouAnteriormente = true;
+                    podeContar = false;
+                    setTimeout(() => {
+                        podeContar = true;
+                    }, 1000);
+                }
+                movimentoAnterior = centroAtual; // Atualiza posição para comparar no próximo frame
+            } else {
                 detectouAnteriormente = false;
             }
 
-            // Solicita o próximo frame para detecção contínua
             requestAnimationFrame(detectarVermelho);
         }
 
-        // Inicia a câmera e a detecção
         acessarCamera().then(() => {
             video.addEventListener('playing', detectarVermelho);
         });
