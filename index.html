@@ -18,21 +18,11 @@
             height: 100vh;
             background-color: #f5f5f5;
             font-family: Arial, sans-serif;
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
         }
         h1 {
             font-size: 1.5em;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        #instrucoes {
-            position: absolute;
-            top: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 1.2em;
             color: #333;
         }
         #video {
@@ -47,25 +37,46 @@
         #detectar-area {
             position: absolute;
             border: 2px solid yellow;
-            pointer-events: none; /* Evita interação com a área */
+            pointer-events: none;
             transition: border-color 0.3s ease;
         }
-        p {
-            font-size: 1.2em;
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            outline: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #contador {
+            color: red;
             font-weight: bold;
-            margin-top: 20px;
-            color: #333;
         }
     </style>
 </head>
 <body>
     <h1>Contagem de Passagens: <span id="contador">0</span></h1>
-    <div id="instrucoes">
-        Ajuste a câmera de modo que o objeto vermelho passe pela área destacada.
-    </div>
     <video id="video" autoplay playsinline></video>
     <div id="detectar-area"></div>
     <canvas id="canvas"></canvas>
+
+    <div class="controls">
+        <button id="btn-cima">↑</button>
+        <button id="btn-baixo">↓</button>
+        <button id="btn-esquerda">←</button>
+        <button id="btn-direita">→</button>
+    </div>
 
     <script>
         const video = document.getElementById('video');
@@ -73,9 +84,45 @@
         const ctx = canvas.getContext('2d');
         const contadorEl = document.getElementById('contador');
         const detectarArea = document.getElementById('detectar-area');
+
+        const btnCima = document.getElementById('btn-cima');
+        const btnBaixo = document.getElementById('btn-baixo');
+        const btnEsquerda = document.getElementById('btn-esquerda');
+        const btnDireita = document.getElementById('btn-direita');
+
         let contador = 0;
         let detectouAnteriormente = false;
         let podeContar = true;
+
+        let posX = 100; // Posição inicial da área de detecção
+        let posY = 100;
+        const TAMANHO_AREA = 50; // 50px de lado (0.5cm aproximado para a área)
+
+        // Atualiza a posição visual da área de detecção
+        function atualizarAreaDeteccao() {
+            detectarArea.style.width = `${TAMANHO_AREA}px`;
+            detectarArea.style.height = `${TAMANHO_AREA}px`;
+            detectarArea.style.left = `${posX}px`;
+            detectarArea.style.top = `${posY}px`;
+        }
+
+        // Controla a posição da área de detecção com os botões
+        btnCima.addEventListener('click', () => {
+            posY = Math.max(0, posY - 10); // Move para cima
+            atualizarAreaDeteccao();
+        });
+        btnBaixo.addEventListener('click', () => {
+            posY = Math.min(video.videoHeight - TAMANHO_AREA, posY + 10); // Move para baixo
+            atualizarAreaDeteccao();
+        });
+        btnEsquerda.addEventListener('click', () => {
+            posX = Math.max(0, posX - 10); // Move para a esquerda
+            atualizarAreaDeteccao();
+        });
+        btnDireita.addEventListener('click', () => {
+            posX = Math.min(video.videoWidth - TAMANHO_AREA, posX + 10); // Move para a direita
+            atualizarAreaDeteccao();
+        });
 
         async function acessarCamera() {
             try {
@@ -93,21 +140,9 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            const meioX = canvas.width / 2;
-            const meioY = canvas.height / 2;
-
-            const TAMANHO_AREA = 37.8; // 1cm em pixels
-            const x = meioX - TAMANHO_AREA / 2;
-            const y = meioY - TAMANHO_AREA / 2;
-
-            detectarArea.style.width = `${TAMANHO_AREA}px`;
-            detectarArea.style.height = `${TAMANHO_AREA}px`;
-            detectarArea.style.left = `${x}px`;
-            detectarArea.style.top = `${y}px`;
-
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const frame = ctx.getImageData(x, y, TAMANHO_AREA, TAMANHO_AREA).data;
+            const frame = ctx.getImageData(posX, posY, TAMANHO_AREA, TAMANHO_AREA).data;
 
             let encontrouVermelho = false;
 
@@ -144,7 +179,10 @@
         }
 
         acessarCamera().then(() => {
-            video.addEventListener("playing", detectarVermelho);
+            video.addEventListener("playing", () => {
+                atualizarAreaDeteccao();
+                detectarVermelho();
+            });
         });
     </script>
 </body>
