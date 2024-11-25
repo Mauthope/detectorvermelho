@@ -31,19 +31,13 @@
             height: auto;
             border-radius: 10px;
         }
-        canvas {
-            display: none;
-        }
         #detectar-area {
             position: absolute;
             border: 2px solid yellow;
             pointer-events: none; /* Impede interação com o quadrado */
         }
-        p {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin-top: 20px;
-            color: #333;
+        canvas {
+            display: none;
         }
     </style>
 </head>
@@ -61,13 +55,12 @@
         const detectarArea = document.getElementById('detectar-area');
         let contador = 0;
         let detectouAnteriormente = false;
+        let movimentoAnterior = null;
         let podeContar = true;
-        let movimentoAnterior = null; // Para detectar movimento descendente
 
         // Configuração da área de detecção
         const TAMANHO_QUADRADO = 18.9; // 0,5 cm em pixels
 
-        // Acessa a câmera
         async function acessarCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -112,19 +105,19 @@
                 }
             }
 
-            const centroAtual = y + TAMANHO_QUADRADO / 2;
-
             if (encontrouVermelho) {
-                if (!detectouAnteriormente && podeContar && movimentoAnterior !== null && centroAtual > movimentoAnterior) {
+                console.log("Vermelho detectado dentro da área de detecção");
+                if (!detectouAnteriormente && podeContar && movimentoAnterior !== null && y > movimentoAnterior) {
                     contador++;
                     contadorEl.textContent = contador;
                     detectouAnteriormente = true;
                     podeContar = false;
+
                     setTimeout(() => {
                         podeContar = true;
                     }, 1000);
                 }
-                movimentoAnterior = centroAtual; // Atualiza posição para comparar no próximo frame
+                movimentoAnterior = y;
             } else {
                 detectouAnteriormente = false;
             }
