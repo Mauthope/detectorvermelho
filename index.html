@@ -19,7 +19,6 @@
             background-color: #f5f5f5;
             font-family: Arial, sans-serif;
             position: relative;
-            overflow: hidden;
         }
         h1 {
             font-size: 1.5em;
@@ -99,6 +98,8 @@
 
         let posX, posY;
         const TAMANHO_AREA = 50;
+        const LIMIAR_PERCENTUAL_VERMELHO = 0.15; // 15% dos pixels precisam ser vermelhos
+        const TEMPO_RESET = 1000; // 1 segundo de intervalo entre contagens
 
         function centralizarAreaDeteccao() {
             posX = (video.videoWidth / 2) - (TAMANHO_AREA / 2);
@@ -150,20 +151,23 @@
 
             const frame = ctx.getImageData(posX, posY, TAMANHO_AREA, TAMANHO_AREA).data;
 
-            let encontrouVermelho = false;
+            let totalPixels = 0;
+            let pixelsVermelhos = 0;
 
             for (let i = 0; i < frame.length; i += 4) {
                 const r = frame[i];
                 const g = frame[i + 1];
                 const b = frame[i + 2];
 
+                totalPixels++;
                 if (r > 150 && g < 100 && b < 100) {
-                    encontrouVermelho = true;
-                    break;
+                    pixelsVermelhos++;
                 }
             }
 
-            if (encontrouVermelho) {
+            const percentualVermelho = pixelsVermelhos / totalPixels;
+
+            if (percentualVermelho > LIMIAR_PERCENTUAL_VERMELHO) {
                 detectarArea.style.borderColor = "red";
 
                 if (!detectouAnteriormente && podeContar) {
@@ -174,7 +178,7 @@
 
                     setTimeout(() => {
                         podeContar = true;
-                    }, 1000);
+                    }, TEMPO_RESET);
                 }
             } else {
                 detectarArea.style.borderColor = "yellow";
