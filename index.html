@@ -24,10 +24,12 @@
         h1 {
             font-size: 1.5em;
             color: #333;
+            margin-bottom: 10px;
         }
         #video {
             display: block;
-            max-width: 100%;
+            width: 90%;
+            max-width: 600px;
             height: auto;
             border-radius: 10px;
         }
@@ -41,10 +43,10 @@
             transition: border-color 0.3s ease;
         }
         .controls {
-            position: absolute;
-            bottom: 20px;
             display: flex;
             gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
         }
         button {
             background-color: #007BFF;
@@ -55,6 +57,7 @@
             font-size: 1em;
             cursor: pointer;
             outline: none;
+            flex: 1 1 20%; /* Responsivo para caber em qualquer tela */
         }
         button:hover {
             background-color: #0056b3;
@@ -94,11 +97,15 @@
         let detectouAnteriormente = false;
         let podeContar = true;
 
-        let posX = 100; // Posição inicial da área de detecção
-        let posY = 100;
-        const TAMANHO_AREA = 50; // 50px de lado (0.5cm aproximado para a área)
+        let posX, posY;
+        const TAMANHO_AREA = 50;
 
-        // Atualiza a posição visual da área de detecção
+        function centralizarAreaDeteccao() {
+            posX = (video.videoWidth / 2) - (TAMANHO_AREA / 2);
+            posY = (video.videoHeight / 2) - (TAMANHO_AREA / 2);
+            atualizarAreaDeteccao();
+        }
+
         function atualizarAreaDeteccao() {
             detectarArea.style.width = `${TAMANHO_AREA}px`;
             detectarArea.style.height = `${TAMANHO_AREA}px`;
@@ -106,21 +113,20 @@
             detectarArea.style.top = `${posY}px`;
         }
 
-        // Controla a posição da área de detecção com os botões
         btnCima.addEventListener('click', () => {
-            posY = Math.max(0, posY - 10); // Move para cima
+            posY = Math.max(0, posY - 10);
             atualizarAreaDeteccao();
         });
         btnBaixo.addEventListener('click', () => {
-            posY = Math.min(video.videoHeight - TAMANHO_AREA, posY + 10); // Move para baixo
+            posY = Math.min(video.videoHeight - TAMANHO_AREA, posY + 10);
             atualizarAreaDeteccao();
         });
         btnEsquerda.addEventListener('click', () => {
-            posX = Math.max(0, posX - 10); // Move para a esquerda
+            posX = Math.max(0, posX - 10);
             atualizarAreaDeteccao();
         });
         btnDireita.addEventListener('click', () => {
-            posX = Math.min(video.videoWidth - TAMANHO_AREA, posX + 10); // Move para a direita
+            posX = Math.min(video.videoWidth - TAMANHO_AREA, posX + 10);
             atualizarAreaDeteccao();
         });
 
@@ -180,7 +186,7 @@
 
         acessarCamera().then(() => {
             video.addEventListener("playing", () => {
-                atualizarAreaDeteccao();
+                centralizarAreaDeteccao();
                 detectarVermelho();
             });
         });
